@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import './App.css';
 import { useForm } from 'react-hook-form';
 
@@ -6,7 +6,15 @@ type Time = Date;
 
 function App() {
   const { register, handleSubmit } = useForm();
-  const [time, setTime] = useState<Time>(new Date(0, 0, 0));
+  const [time, setTime] = useState<Time>(() => {
+    const date = new Date();
+    date.setHours(0);
+    date.setMinutes(15);
+    date.setSeconds(0);
+    return date;
+  });
+  const [isRunningTimer, setIsRunningTimer] = useState<boolean>(false);
+  const interval = useRef<any>();
 
   const onSubmit = ({
     hours,
@@ -21,13 +29,20 @@ function App() {
   };
 
   const handleStartClick = () => {
-    setInterval(() => {
-      setTime((time) => {
-        let s = time.getSeconds();
-        console.log(s);
-        time.setSeconds(s--);
-        console.log(time);
-        return time;
+    if (isRunningTimer) {
+      setIsRunningTimer(false);
+      clearInterval(interval.current);
+      return;
+    }
+    setIsRunningTimer(true);
+    interval.current = setInterval(() => {
+      setTime((cTime) => {
+        let s = new Date();
+        s.setHours(cTime.getHours());
+        s.setMinutes(cTime.getMinutes());
+        s.setSeconds(cTime.getSeconds() - 1);
+
+        return s;
       });
     }, 1000);
   };
@@ -40,10 +55,14 @@ function App() {
         <input type='number' {...register('seconds')} />
         <button>Set</button>
       </form>
-      <button onClick={() => handleStartClick()}>Start</button>
+      <button id='start' onClick={() => handleStartClick()}>
+        {!isRunningTimer ? 'Start' : 'Stop'}
+      </button>
       <div className='timer-container'>
         <p>
-          {time.getHours()}:{time.getMinutes()}:{time.getSeconds()}
+          {`${time.getHours() === 0 ? '00' : time.getHours()}`}:
+          {`${time.getMinutes() === 0 ? '00' : time.getMinutes()}`}:
+          {`${time.getSeconds() === 0 ? '00' : time.getSeconds()}`}
         </p>
       </div>
     </div>
